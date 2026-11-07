@@ -258,7 +258,7 @@ function Info() {
   );
 }
 
-export default function Shop({ page, setPage, cart }: { page: Page | null; setPage: (p: Page | null) => void; cart: Cart }) {
+export default function Shop({ page, setPage, cart }: { page: Page; setPage: (p: Page | null) => void; cart: Cart }) {
   const [msg, setMsg] = useState('');
   const toast: Toast = (m) => { setMsg(m); setTimeout(() => setMsg(''), 2200); };
   useEffect(() => {
@@ -266,7 +266,6 @@ export default function Shop({ page, setPage, cart }: { page: Page | null; setPa
     window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k);
   }, [setPage]);
   useEffect(() => { document.querySelector('.fl')?.scrollTo({ top: 0 }); }, [page]);
-  if (!page) return null;
   const tab = page === 'about' || page === 'contacts' ? 'delivery' : page;
   const [eyebrow, title, lead] = HEAD[tab];
   const nav: [Page, string, ReactNode][] = [['catalog', 'Каталог', I.grid], ['builder', 'Конструктор', I.flower], ['delivery', 'Контакты', I.pin], ['cart', 'Корзина', I.bag]];
