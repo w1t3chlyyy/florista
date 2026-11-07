@@ -94,7 +94,7 @@ export default function App() {
             {link('about', 'О студии')}
             {link('contacts', 'Контакты')}
             <button className="pill" onClick={() => setPage('builder')}>Собрать букет</button>
-            <button className="pill" onClick={() => setPage('cart')} aria-label="Корзина">Корзина{cart.count ? ` · ${cart.count}` : ''}</button>
+            
           </nav>
         </header>
 
@@ -113,14 +113,7 @@ export default function App() {
 
         <div className="corner">
           <span>Макеевка</span>
-          <i />
-          <button className="sound" id="sound" ref={soundBtnRef} aria-pressed="false" aria-label="Звук" onClick={toggleSound}>
-            <svg viewBox="0 0 24 24">
-              <path d="M4 9v6h4l5 4V5L8 9H4z" />
-              <path className="w" d="M16.5 8.5a5 5 0 010 7M19 6a8.5 8.5 0 010 12" />
-              <path className="x" d="M17 9l5 6M22 9l-5 6" />
-            </svg>
-          </button>
+         
         </div>
       </div>
 
