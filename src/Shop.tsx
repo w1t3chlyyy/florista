@@ -6,9 +6,14 @@ interface CartItem { id: string; title: string; price: number; img?: string; qty
 
 const money = (n: number) => `${n.toLocaleString('ru-RU')} ₽`;
 const TABS: [Page, string][] = [['catalog', 'Каталог'], ['builder', 'Конструктор'], ['delivery', 'Доставка и уход'], ['about', 'О студии'], ['contacts', 'Контакты'], ['cart', 'Корзина']];
-const field = 'w-full bg-[#181814] border border-[#f5efe2]/20 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#f5efe2]';
-const btn = 'px-6 py-3 rounded-full bg-[#f5efe2] text-[#151510] text-xs font-semibold uppercase tracking-wider hover:bg-white transition-colors disabled:opacity-40';
-const chip = (on: boolean) => `px-3 py-2 rounded-lg text-sm border text-left transition-all ${on ? 'border-[#f5efe2] bg-[#f5efe2]/15 text-white' : 'border-[#f5efe2]/20 text-[#f5efe2]/70 hover:border-[#f5efe2]/50'}`;
+const field = 'w-full min-h-12 bg-[#171612] border border-[#3d3b33] rounded-xl px-4 py-3 text-sm text-[#f5efe2] placeholder:text-[#8f8a7c] focus:outline-none focus:border-[#f5efe2]';
+const btn = 'inline-flex items-center justify-center gap-3 h-12 px-6 rounded-full bg-[#f5efe2] text-[#151510] text-[13px] font-semibold uppercase tracking-[0.08em] hover:bg-white transition-colors disabled:opacity-40';
+const ghost = 'inline-flex items-center justify-center h-12 px-6 rounded-full border border-[#5a574c] text-[13px] font-semibold uppercase tracking-[0.08em] hover:border-[#f5efe2] transition-colors';
+const chip = (on: boolean) => `min-h-11 px-4 py-2.5 rounded-xl text-sm text-left border transition-all ${on ? 'border-[#f5efe2] bg-[#26241d] text-white' : 'border-[#3d3b33] text-[#d9d3c4] hover:border-[#8f8a7c]'}`;
+const H2 = 'text-[32px] leading-[1.1] uppercase mb-6';
+const LAB = 'text-xs uppercase tracking-[0.18em] font-semibold text-[#b8b2a3]';
+const ANT = { fontFamily: 'Antonio, sans-serif', fontWeight: 400 } as const;
+const PRICE = 'font-semibold tabular-nums';
 
 function Img({ src, alt, className = '' }: { src?: string; alt: string; className?: string }) {
   const [bad, setBad] = useState(!src);
@@ -35,40 +40,71 @@ export function useCart() {
 }
 type Cart = ReturnType<typeof useCart>;
 
-function Catalog({ cart, toast }: { cart: Cart; toast: (m: string) => void }) {
+function Catalog({ cart, toast, go }: { cart: Cart; toast: (m: string) => void; go: (p: Page) => void }) {
   const [f, setF] = useState<'all' | Bouquet['category']>('all');
   const [sort, setSort] = useState<'pop' | 'asc' | 'desc'>('pop');
+  const [fav, setFav] = useState<string[]>([]);
   const list = useMemo(() => {
     const l = BOUQUETS.filter((b) => f === 'all' || b.category === f);
     return sort === 'asc' ? [...l].sort((a, b) => a.price - b.price) : sort === 'desc' ? [...l].sort((a, b) => b.price - a.price) : l;
   }, [f, sort]);
   return (
     <>
-      <div className="flex flex-wrap gap-2 items-center mb-6">
-        {([['all', 'Все'], ['author', 'Авторские'], ['mono', 'Монобукеты'], ['box', 'В коробках'], ['wedding', 'Свадебные']] as const).map(([k, l]) => (
-          <button key={k} onClick={() => setF(k)} className={`px-4 py-1.5 rounded-full border text-sm ${f === k ? 'bg-[#f5efe2] text-[#151510] border-[#f5efe2]' : 'border-[#f5efe2]/25 text-[#f5efe2]/75'}`}>{l}</button>
-        ))}
-        <select value={sort} onChange={(e) => setSort(e.target.value as any)} className="ml-auto bg-[#181814] border border-[#f5efe2]/25 rounded-full px-3 py-1.5 text-sm">
-          <option value="pop">По популярности</option><option value="asc">Сначала дешевле</option><option value="desc">Сначала дороже</option>
+      <section className="grid md:grid-cols-2 overflow-hidden rounded-[24px] border border-[#2b2a24] bg-[#171612] mb-12">
+        <div className="relative min-h-[320px] md:min-h-[440px]">
+          <Img src={BOUQUETS[0].img} alt={BOUQUETS[0].title} className="absolute inset-0 w-full h-full" />
+        </div>
+        <div className="p-8 sm:p-12 flex flex-col justify-center gap-5">
+          <span className="self-start rounded-full bg-[#f5efe2] text-[#151510] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em]">Новинка</span>
+          <h2 className="text-[44px] sm:text-[56px] leading-none uppercase" style={ANT}>{BOUQUETS[0].title}</h2>
+          <p className="text-[#d9d3c4] text-lg max-w-md">{BOUQUETS[0].description}</p>
+          <p className="text-sm text-[#b8b2a3]">Состав: {BOUQUETS[0].composition.join(', ')}</p>
+          <div className="flex flex-wrap items-center gap-6 pt-2">
+            <span className={`text-[28px] ${PRICE}`}>{money(BOUQUETS[0].price)}</span>
+            <button className={btn} onClick={() => { const b = BOUQUETS[0]; cart.add({ id: b.id, title: b.title, price: b.price, img: b.img }); toast(`«${b.title}» в корзине`); }}>В корзину</button>
+          </div>
+        </div>
+      </section>
+      <div className="flex flex-wrap items-center justify-between gap-4 py-5 border-y border-[#2b2a24]">
+        <div className="flex flex-wrap gap-3">
+          {([['all', 'Все'], ['author', 'Авторские'], ['mono', 'Монобукеты'], ['box', 'В коробках'], ['wedding', 'Свадебные']] as const).map(([k, l]) => (
+            <button key={k} onClick={() => setF(k)} className={chip(f === k)}>{l}</button>
+          ))}
+        </div>
+        <select value={sort} onChange={(e) => setSort(e.target.value as any)} className="h-11 bg-[#171612] border border-[#3d3b33] rounded-xl px-4 text-sm">
+          <option value="pop">Сначала популярные</option><option value="asc">Сначала дешевле</option><option value="desc">Сначала дороже</option>
         </select>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      <p className="text-sm text-[#b8b2a3] pt-6 pb-8">Показано букетов: {list.length}</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12">
         {list.map((b) => (
-          <article key={b.id} className="group rounded-2xl overflow-hidden border border-[#f5efe2]/15 bg-[#14140f] flex flex-col">
-            <div className="relative aspect-[4/5] overflow-hidden">
-              <Img src={b.img} alt={b.title} className="w-full h-full group-hover:scale-105 transition-transform duration-700" />
-              <span className="absolute top-3 left-3 text-[11px] uppercase tracking-wider bg-black/60 backdrop-blur px-2.5 py-1 rounded-full">{b.tag}</span>
+          <article key={b.id}>
+            <div className="relative aspect-[4/5] overflow-hidden rounded-2xl">
+              <Img src={b.img} alt={b.title} className="w-full h-full" />
+              <span className="absolute top-3 left-3 bg-[#0f0f0c]/85 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em]">{b.tag}</span>
+              <button aria-label="В избранное" onClick={() => setFav((x) => (x.includes(b.id) ? x.filter((y) => y !== b.id) : [...x, b.id]))}
+                className="absolute top-2 right-2 w-11 h-11 rounded-full bg-[#0f0f0c]/85 grid place-items-center text-lg">{fav.includes(b.id) ? '♥' : '♡'}</button>
             </div>
-            <div className="p-4 flex flex-col gap-2 flex-1">
-              <h3 className="text-lg" style={{ fontFamily: 'Antonio, sans-serif' }}>{b.title}</h3>
-              <p className="text-sm text-[#f5efe2]/65">{b.description}</p>
-              <p className="text-xs text-[#f5efe2]/45">Состав: {b.composition.join(' · ')}</p>
-              <div className="mt-auto pt-3 flex items-center justify-between">
-                <span className="text-lg font-medium">{money(b.price)}</span>
-                <button className={btn} onClick={() => { cart.add({ id: b.id, title: b.title, price: b.price, img: b.img }); toast(`«${b.title}» в корзине`); }}>В корзину</button>
+            <div className="pt-4 px-1">
+              <h3 className="text-lg font-semibold leading-snug">{b.title}</h3>
+              <p className="text-sm text-[#b8b2a3] mt-1 min-h-[42px]">{b.composition.join(', ')}</p>
+              <div className="flex items-center justify-between mt-3">
+                <span className={`text-xl ${PRICE}`}>{money(b.price)}</span>
+                <button aria-label={`Добавить «${b.title}» в корзину`} className="w-12 h-12 rounded-full bg-[#f5efe2] text-[#151510] grid place-items-center text-xl hover:bg-white"
+                  onClick={() => { cart.add({ id: b.id, title: b.title, price: b.price, img: b.img }); toast(`«${b.title}» в корзине`); }}>+</button>
               </div>
             </div>
           </article>
+        ))}
+        <div className="rounded-[20px] bg-[#26241d] border border-[#2b2a24] p-8 flex flex-col justify-between aspect-[4/5] self-start">
+          <div><div className={LAB + ' mb-4'}>Нет подходящего?</div><h3 className="text-[32px] leading-[1.1] uppercase" style={ANT}>Соберите свой букет</h3>
+            <p className="text-[#b8b2a3] mt-4">Выберите размер, палитру и цветы — флорист пришлёт фото до отправки.</p></div>
+          <button className={btn} onClick={() => go('builder')}>В конструктор →</button>
+        </div>
+      </div>
+      <div className="grid sm:grid-cols-3 gap-8 mt-24 py-10 border-y border-[#2b2a24]">
+        {[['Фото до отправки', 'Покажем готовый букет в мессенджере'], ['Открытка от руки', 'Напишем ваши слова каллиграфией'], ['Доставка по Макеевке', `От 60 минут, бесплатно от ${money(DELIVERY.free)}`]].map(([t, d]) => (
+          <div key={t}><h3 className="text-lg font-semibold">{t}</h3><p className="text-sm text-[#b8b2a3] mt-1">{d}</p></div>
         ))}
       </div>
     </>
@@ -87,11 +123,11 @@ function Builder({ cart, toast, go }: { cart: Cart; toast: (m: string) => void; 
   const price = s.price + p.price + Math.max(0, fl.length - 2) * 300;
   const toggle = (x: string) => setFl((a) => (a.includes(x) ? (a.length > 1 ? a.filter((y) => y !== x) : a) : [...a, x]));
   const Block = ({ t, children }: { t: string; children: React.ReactNode }) => (
-    <div><div className="text-xs uppercase tracking-[0.18em] text-[#f5efe2]/55 mb-2">{t}</div>{children}</div>
+    <div><div className="text-xs uppercase tracking-[0.18em] font-semibold text-[#b8b2a3] mb-4">{t}</div>{children}</div>
   );
   return (
-    <div className="grid lg:grid-cols-[1fr_320px] gap-8">
-      <div className="space-y-6">
+    <div className="grid lg:grid-cols-[1fr_360px] gap-16">
+      <div className="space-y-10">
         <Block t="Размер">
           <div className="grid sm:grid-cols-3 gap-2">
             {BUILDER.sizes.map((x) => <button key={x.id} onClick={() => setSize(x.id)} className={chip(size === x.id)}><b>{x.label}</b><br /><span className="text-xs opacity-60">{x.stems} · от {money(x.price)}</span></button>)}
@@ -103,12 +139,12 @@ function Builder({ cart, toast, go }: { cart: Cart; toast: (m: string) => void; 
         <Block t="Упаковка"><div className="flex flex-wrap gap-2">{BUILDER.packs.map((x) => <button key={x.id} onClick={() => setPack(x.id)} className={chip(pack === x.id)}>{x.label}{x.price ? ` +${money(x.price)}` : ''}</button>)}</div></Block>
         <Block t="Пожелания флористу"><textarea rows={3} value={wish} onChange={(e) => setWish(e.target.value)} placeholder="Любимые цветы получателя, аллергии, что точно не нужно…" className={field} /></Block>
       </div>
-      <aside className="lg:sticky lg:top-4 self-start rounded-2xl border border-[#f5efe2]/20 bg-[#14140f] p-5 space-y-3 text-sm">
-        <div className="text-xs uppercase tracking-[0.18em] text-[#f5efe2]/55">Ваш букет</div>
+      <aside className="lg:sticky lg:top-4 self-start rounded-[20px] border border-[#2b2a24] bg-[#171612] p-6 space-y-3 text-sm">
+        <div className="text-xs uppercase tracking-[0.18em] text-[#b8b2a3]">Ваш букет</div>
         <div>{s.label} · {occ}</div>
         <div className="text-[#f5efe2]/70">{pal}<br />{fl.join(', ')}<br />{p.label}</div>
-        <div className="text-2xl pt-2 border-t border-[#f5efe2]/15">{money(price)}</div>
-        <p className="text-xs text-[#f5efe2]/50">Флорист пришлёт фото до отправки. Итоговая цена может уточниться по наличию цветов.</p>
+        <div className="flex items-baseline justify-between pt-4 border-t border-[#2b2a24]"><span className="text-sm text-[#b8b2a3]">Итого</span><span className={`text-[28px] ${PRICE}`}>{money(price)}</span></div>
+        <p className="text-xs text-[#b8b2a3]">Флорист пришлёт фото до отправки. Итоговая цена может уточниться по наличию цветов.</p>
         <button className={`${btn} w-full`} onClick={() => {
           cart.add({ id: `custom-${Date.now()}`, title: `Свой букет: ${s.label}`, price, note: `${occ}; ${pal}; ${fl.join(', ')}; ${p.label}${wish ? `; ${wish}` : ''}` });
           toast('Букет добавлен в корзину'); go('cart');
@@ -140,27 +176,27 @@ function CartPage({ cart, go }: { cart: Cart; go: (p: Page) => void }) {
       <button className={btn} onClick={() => go('catalog')}>Выбрать букет</button></div>
   );
   const Summary = (
-    <aside className="rounded-2xl border border-[#f5efe2]/20 bg-[#14140f] p-5 space-y-2 text-sm self-start">
+    <aside className="rounded-[20px] border border-[#2b2a24] bg-[#171612] p-6 space-y-2 text-sm self-start">
       <div className="flex justify-between"><span>Товары</span><span>{money(cart.sum)}</span></div>
       <div className="flex justify-between"><span>Открытка</span><span>{pc.price ? money(pc.price) : 'бесплатно'}</span></div>
       <div className="flex justify-between"><span>Доставка</span><span>{d.pickup ? 'самовывоз' : delivery ? money(delivery) : 'бесплатно'}</span></div>
-      {!d.pickup && cart.sum < DELIVERY.free && <div className="text-xs text-[#f5efe2]/50">Ещё {money(DELIVERY.free - cart.sum)} до бесплатной доставки</div>}
-      <div className="flex justify-between text-lg pt-2 border-t border-[#f5efe2]/15"><span>Итого</span><span>{money(total)}</span></div>
+      {!d.pickup && cart.sum < DELIVERY.free && <div className="text-xs text-[#b8b2a3]">Ещё {money(DELIVERY.free - cart.sum)} до бесплатной доставки</div>}
+      <div className="flex items-baseline justify-between pt-4 border-t border-[#2b2a24]"><span className="font-semibold">К оплате</span><span className={`text-[28px] ${PRICE}`}>{money(total)}</span></div>
       {step === 'cart' && <button className={`${btn} w-full mt-2`} onClick={() => setStep('form')}>Оформить заказ</button>}
     </aside>
   );
   return (
-    <div className="grid lg:grid-cols-[1fr_320px] gap-8">
+    <div className="grid lg:grid-cols-[1fr_360px] gap-16">
       {step === 'cart' ? (
         <div className="space-y-3">
           {cart.items.map((i) => (
-            <div key={i.id} className="flex gap-4 rounded-xl border border-[#f5efe2]/15 bg-[#14140f] p-3">
+            <div key={i.id} className="flex gap-4 rounded-xl border border-[#2b2a24] bg-[#171612] p-3">
               <Img src={i.img} alt={i.title} className="w-20 h-24 rounded-lg shrink-0" />
-              <div className="flex-1 min-w-0"><div className="font-medium">{i.title}</div>{i.note && <div className="text-xs text-[#f5efe2]/50 mt-1">{i.note}</div>}
+              <div className="flex-1 min-w-0"><div className="font-medium">{i.title}</div>{i.note && <div className="text-xs text-[#b8b2a3] mt-1">{i.note}</div>}
                 <div className="mt-2 flex items-center gap-3 text-sm">
                   <button onClick={() => cart.setQty(i.id, -1)} className="w-7 h-7 rounded-full border border-[#f5efe2]/30">−</button>{i.qty}
                   <button onClick={() => cart.setQty(i.id, 1)} className="w-7 h-7 rounded-full border border-[#f5efe2]/30">+</button></div></div>
-              <div className="text-right"><div>{money(i.price * i.qty)}</div><button onClick={() => cart.setQty(i.id, -i.qty)} className="text-xs text-[#f5efe2]/45 mt-2 hover:text-white">Удалить</button></div>
+              <div className="text-right"><div className={PRICE}>{money(i.price * i.qty)}</div><button onClick={() => cart.setQty(i.id, -i.qty)} className="text-xs text-[#b8b2a3] mt-2 hover:text-white">Удалить</button></div>
             </div>
           ))}
         </div>
@@ -171,7 +207,7 @@ function CartPage({ cart, go }: { cart: Cart; go: (p: Page) => void }) {
           try { localStorage.setItem('fl-last-order', JSON.stringify({ n, d, items: cart.items, total })); } catch {}
           setOrder({ n, total }); cart.clear(); setStep('done'); // TODO: подключить реальную оплату и отправку заказа
         }}>
-          <button type="button" onClick={() => setStep('cart')} className="text-sm text-[#f5efe2]/60 hover:text-white">← К корзине</button>
+          <button type="button" onClick={() => setStep('cart')} className="text-sm text-[#b8b2a3] hover:text-white">← К корзине</button>
           <div className="grid sm:grid-cols-2 gap-3">
             <input required className={field} placeholder="Ваше имя" value={d.name} onChange={(e) => set('name', e.target.value)} />
             <input required type="tel" className={field} placeholder="+7 (949) 000-00-00" value={d.phone} onChange={(e) => set('phone', e.target.value)} />
@@ -189,7 +225,7 @@ function CartPage({ cart, go }: { cart: Cart; go: (p: Page) => void }) {
             <input required className={field} placeholder="Время: напр. 16:00–18:00" value={d.time} onChange={(e) => set('time', e.target.value)} />
           </div>
           <div>
-            <div className="text-xs uppercase tracking-[0.18em] text-[#f5efe2]/55 mb-2">Открытка</div>
+            <div className="text-xs uppercase tracking-[0.18em] font-semibold text-[#b8b2a3] mb-4">Открытка</div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {POSTCARDS.map((c) => (
                 <button type="button" key={c.id} onClick={() => set('card', c.id)} className={`${chip(d.card === c.id)} p-2`}>
@@ -201,11 +237,11 @@ function CartPage({ cart, go }: { cart: Cart; go: (p: Page) => void }) {
             {d.card !== 'none' && <textarea rows={3} maxLength={300} className={`${field} mt-2`} placeholder="Текст открытки (до 300 символов)" value={d.text} onChange={(e) => set('text', e.target.value)} />}
           </div>
           <div>
-            <div className="text-xs uppercase tracking-[0.18em] text-[#f5efe2]/55 mb-2">Оплата</div>
+            <div className="text-xs uppercase tracking-[0.18em] font-semibold text-[#b8b2a3] mb-4">Оплата</div>
             <div className="flex flex-wrap gap-2">
               {[['card', 'Картой онлайн'], ['cash', 'Наличными курьеру'], ['transfer', 'Переводом']].map(([k, l]) => <button type="button" key={k} onClick={() => set('pay', k)} className={chip(d.pay === k)}>{l}</button>)}
             </div>
-            {d.pay === 'card' && <div className="mt-3 rounded-xl border border-dashed border-[#f5efe2]/30 p-4 text-xs text-[#f5efe2]/60">Онлайн-оплата пока в режиме заглушки: деньги не списываются. Платёжный шлюз подключим позже.</div>}
+            {d.pay === 'card' && <div className="mt-3 rounded-xl border border-dashed border-[#f5efe2]/30 p-4 text-xs text-[#b8b2a3]">Онлайн-оплата пока в режиме заглушки: деньги не списываются. Платёжный шлюз подключим позже.</div>}
           </div>
           <button type="submit" className={`${btn} w-full sm:w-auto`}>{d.pay === 'card' ? `Оплатить ${money(total)}` : 'Подтвердить заказ'}</button>
         </form>
@@ -218,14 +254,14 @@ function CartPage({ cart, go }: { cart: Cart; go: (p: Page) => void }) {
 function Delivery() {
   return (
     <div className="grid md:grid-cols-2 gap-6 text-sm text-[#f5efe2]/80 leading-relaxed">
-      <section className="rounded-2xl border border-[#f5efe2]/15 p-6 bg-[#14140f] space-y-3">
-        <h3 className="text-xl text-white" style={{ fontFamily: 'Antonio, sans-serif' }}>Доставка по Макеевке</h3>
+      <section className="rounded-2xl border border-[#2b2a24] p-6 bg-[#171612] space-y-3">
+        <h3 className={H2 + ' text-white'} style={ANT}>Доставка по Макеевке</h3>
         <p>Доставляем по всему городу: {DISTRICTS.map((d) => `${d} район`).join(', ')}.</p>
         <ul className="list-disc list-inside space-y-1"><li>Экспресс 60–90 минут</li><li>{money(DELIVERY.fee)} — доставка, бесплатно от {money(DELIVERY.free)}</li><li>Можно выбрать интервал времени</li><li>Анонимная доставка и сюрприз по телефону получателя</li><li>Самовывоз из мастерской — бесплатно</li></ul>
-        <p className="text-xs text-[#f5efe2]/50">За пределы города — по договорённости с флористом.</p>
+        <p className="text-xs text-[#b8b2a3]">За пределы города — по договорённости с флористом.</p>
       </section>
-      <section className="rounded-2xl border border-[#f5efe2]/15 p-6 bg-[#14140f] space-y-3">
-        <h3 className="text-xl text-white" style={{ fontFamily: 'Antonio, sans-serif' }}>Как ухаживать за букетом</h3>
+      <section className="rounded-2xl border border-[#2b2a24] p-6 bg-[#171612] space-y-3">
+        <h3 className={H2 + ' text-white'} style={ANT}>Как ухаживать за букетом</h3>
         <ol className="list-decimal list-inside space-y-1"><li>Подрежьте стебли на 1,5–2 см под углом 45°.</li><li>Растворите подкормку в прохладной воде.</li><li>Меняйте воду и обновляйте срез каждые 1–2 дня.</li><li>Держите вдали от батарей, сквозняков и прямого солнца.</li></ol>
       </section>
     </div>
@@ -237,7 +273,7 @@ function About() {
   return (
     <div className="max-w-3xl space-y-6 text-[#f5efe2]/80 leading-relaxed">
       <p className="text-lg">FloRista — цветочная мастерская в Макеевке. Мы собираем каждый букет под момент: как признание, комплимент или тёплую поддержку.</p>
-      <div className="grid sm:grid-cols-2 gap-3">{items.map(([i, t, d]) => <div key={t} className="rounded-xl border border-[#f5efe2]/15 bg-[#14140f] p-4"><div className="text-2xl">{i}</div><div className="text-white mt-1">{t}</div><div className="text-sm text-[#f5efe2]/60">{d}</div></div>)}</div>
+      <div className="grid sm:grid-cols-2 gap-3">{items.map(([i, t, d]) => <div key={t} className="rounded-xl border border-[#2b2a24] bg-[#171612] p-4"><div className="text-2xl">{i}</div><div className="text-white mt-1">{t}</div><div className="text-sm text-[#b8b2a3]">{d}</div></div>)}</div>
     </div>
   );
 }
@@ -247,10 +283,10 @@ function Contacts() {
   return (
     <div className="grid md:grid-cols-2 gap-8">
       <div className="space-y-4 text-sm">
-        {[['Телефон', CONTACTS.phone], ['Адрес', CONTACTS.address], ['Время работы', CONTACTS.hours]].map(([k, v]) => <div key={k}><div className="text-xs uppercase tracking-[0.18em] text-[#f5efe2]/55">{k}</div><div className="text-base mt-0.5">{v}</div></div>)}
+        {[['Телефон', CONTACTS.phone], ['Адрес', CONTACTS.address], ['Время работы', CONTACTS.hours]].map(([k, v]) => <div key={k}><div className="text-xs uppercase tracking-[0.18em] text-[#b8b2a3]">{k}</div><div className="text-base mt-0.5">{v}</div></div>)}
         <div className="flex gap-3 pt-2"><a className={btn} href={CONTACTS.telegram} target="_blank" rel="noreferrer">Telegram</a><a className={btn} href={CONTACTS.instagram} target="_blank" rel="noreferrer">Instagram</a></div>
       </div>
-      {sent ? <div className="rounded-2xl border border-[#f5efe2]/20 p-8 text-center">Спасибо! Мы свяжемся с вами в ближайшее время 🌸</div> : (
+      {sent ? <div className="rounded-2xl border border-[#2b2a24] p-8 text-center">Спасибо! Мы свяжемся с вами в ближайшее время 🌸</div> : (
         <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); setSent(true); }}>
           <input required className={field} placeholder="Имя" /><input required className={field} placeholder="Телефон" />
           <textarea required rows={4} className={field} placeholder="Ваш вопрос" /><button className={btn}>Отправить</button>
@@ -269,14 +305,15 @@ export default function Shop({ page, setPage, cart }: { page: Page | null; setPa
   }, [setPage]);
   if (!page) return null;
   const titles: Record<Page, string> = { catalog: 'Готовые букеты', builder: 'Собрать свой букет', delivery: 'Доставка и уход', about: 'О студии', contacts: 'Контакты', cart: 'Корзина и оформление' };
+  const eyebrows: Record<Page, string> = { catalog: 'Коллекция', builder: 'Индивидуально', delivery: 'Макеевка', about: 'FloRista', contacts: 'Макеевка', cart: 'Оформление' };
   return (
     <div className="fixed inset-0 z-50 bg-[#0c0c09]/97 backdrop-blur-xl overflow-y-auto text-[#f5efe2]" style={{ fontFamily: 'Manrope, sans-serif' }}>
       <div className="sticky top-0 z-10 bg-[#0c0c09]/90 backdrop-blur border-b border-[#f5efe2]/10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-8 py-3 flex items-center gap-4">
+        <div className="max-w-[1200px] mx-auto px-5 sm:px-10 h-20 flex items-center gap-4">
           <button onClick={() => setPage(null)} className="text-xl font-medium" aria-label="На главную">FloRista</button>
           <div className="flex-1 flex gap-1 overflow-x-auto text-sm">
             {TABS.map(([k, l]) => (
-              <button key={k} onClick={() => setPage(k)} className={`px-3 py-1.5 rounded-full whitespace-nowrap ${page === k ? 'bg-[#f5efe2] text-[#151510]' : 'text-[#f5efe2]/70 hover:text-white'}`}>
+              <button key={k} onClick={() => setPage(k)} className={`px-4 h-10 rounded-full whitespace-nowrap ${page === k ? 'bg-[#f5efe2] text-[#151510]' : 'text-[#f5efe2]/70 hover:text-white'}`}>
                 {l}{k === 'cart' && cart.count > 0 ? ` (${cart.count})` : ''}
               </button>
             ))}
@@ -284,9 +321,9 @@ export default function Shop({ page, setPage, cart }: { page: Page | null; setPa
           <button onClick={() => setPage(null)} className="w-9 h-9 rounded-full border border-[#f5efe2]/30" aria-label="Закрыть">✕</button>
         </div>
       </div>
-      <main className="max-w-6xl mx-auto px-4 sm:px-8 py-8 sm:py-12">
-        <h2 className="text-4xl sm:text-6xl mb-8" style={{ fontFamily: 'Antonio, sans-serif' }}>{titles[page]}</h2>
-        {page === 'catalog' && <Catalog cart={cart} toast={toast} />}
+      <main className="max-w-[1200px] mx-auto px-5 sm:px-10 pt-12 pb-24">
+        <div className="py-8 sm:py-12"><div className={LAB + ' mb-4'}>{eyebrows[page]}</div><h1 className="text-[44px] sm:text-[72px] leading-none uppercase" style={ANT}>{titles[page]}</h1></div>
+        {page === 'catalog' && <Catalog cart={cart} toast={toast} go={setPage} />}
         {page === 'builder' && <Builder cart={cart} toast={toast} go={setPage} />}
         {page === 'cart' && <CartPage cart={cart} go={setPage} />}
         {page === 'delivery' && <Delivery />}
