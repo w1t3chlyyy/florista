@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import Shop, { useCart, type Page } from './Shop';
+import { useRoute } from './useRoute';
 
 declare global {
   interface Window {
@@ -9,15 +10,12 @@ declare global {
   }
 }
 
-export default function App() {
+function Home({ open }: { open: (p: Page) => void }) {
   const goBtnRef = useRef<HTMLButtonElement>(null);
-  const soundBtnRef = useRef<HTMLButtonElement>(null);
   const valleyRef = useRef<any>(null);
   const audioRef = useRef<any>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [introShown, setIntroShown] = useState(false);
-  const [page, setPage] = useState<Page | null>(null);
-  const cart = useCart();
 
   useEffect(() => {
     let unmounted = false;
@@ -64,21 +62,12 @@ export default function App() {
       clearTimeout(t);
       cleanup?.();
       try { valleyRef.current?.destroy?.(); } catch (e) { console.warn(e); }
+      valleyRef.current = null;
     };
   }, []);
 
-  const toggleSound = () => {
-    try {
-      const s = audioRef.current?.();
-      if (!s) return;
-      if (!s.isInitialized) s.initAudio?.();
-      const muted = s.toggleMute?.();
-      soundBtnRef.current?.setAttribute('aria-pressed', String(!muted));
-    } catch (e) { console.warn(e); }
-  };
-
   const link = (p: Page, label: string) => (
-    <a href={`#${p}`} onClick={(e) => { e.preventDefault(); setPage(p); }}>{label}</a>
+    <a href={`#/${p}`}>{label}</a>
   );
 
   return (
@@ -87,14 +76,13 @@ export default function App() {
 
       <div className={`ui ${introShown ? 'on' : ''}`} id="ui">
         <header>
-          <a className="logo" href="#" aria-label="FloRista" onClick={(e) => { e.preventDefault(); setPage(null); }}>FloRista</a>
+          <a className="logo" href="#/" aria-label="FloRista">FloRista</a>
           <nav aria-label="Main">
             {link('catalog', 'Каталог')}
             {link('delivery', 'Доставка')}
             {link('about', 'О студии')}
             {link('contacts', 'Контакты')}
-            <button className="pill" onClick={() => setPage('builder')}>Собрать букет</button>
-            
+            <button className="pill" onClick={() => open('builder')}>Собрать букет</button>
           </nav>
         </header>
 
@@ -105,7 +93,7 @@ export default function App() {
             <br />
             Букеты с доставкой по Макеевке.
           </p>
-          <button className="go-btn" id="go" ref={goBtnRef} onClick={() => setPage('catalog')}>
+          <button className="go-btn" id="go" ref={goBtnRef} onClick={() => open('catalog')}>
             Выбрать букет
             <svg viewBox="0 0 24 24"><path d="M4 12h16M14 6l6 6-6 6" /></svg>
           </button>
@@ -113,13 +101,19 @@ export default function App() {
 
         <div className="corner">
           <span>Макеевка</span>
-         
         </div>
       </div>
 
       <div className={`loader ${isLoaded ? 'gone' : ''}`} id="loader"><span /></div>
-
-      <Shop page={page} setPage={setPage} cart={cart} />
     </>
   );
+}
+
+export default function App() {
+  const [page, setPage] = useRoute();
+  const cart = useCart();
+
+  return page
+    ? <Shop page={page} setPage={setPage} cart={cart} />
+    : <Home open={setPage} />;
 }
